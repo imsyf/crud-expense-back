@@ -1,0 +1,25 @@
+{
+  "name": "crud-expense-back",
+  "version": "0.1.0",
+  "description": "create, read, update, or delete your money spending",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@bitty/format-date": "^1.1.3",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "helmet": "^4.1.0",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.0-rc.2",
+    "mysql2": "^2.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}
