@@ -1,2 +1,2 @@
 # crud-expense-back
- create, read, update, or delete your money spending
+Create, read, update, or delete your money spending
