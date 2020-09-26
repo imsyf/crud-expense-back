@@ -10,9 +10,15 @@ const _upload = (stream, filename) => new Promise((resolve, reject) => {
     });
 });
 
-const _delete = (filename) => {
-  fs.unlinkSync(`${global.localStorageBucket}/${filename}`);
-}
+const _delete = (filename) => new Promise((resolve, reject) => {
+  fs.unlink(
+    `${global.localStorageBucket}/${filename}`,
+    (error) => {
+      if (error) reject(error);
+      resolve();
+    }
+  );
+});
 
 const initBucket = (dir) => {
   if (!fs.existsSync(dir)) {
