@@ -152,20 +152,45 @@ router.delete('/:id(\\d+)', async (req, res, next) => {
   }
 });
 
-router.post('/add', multi.single('receipt'), handleUpload, async (req, res, next) => {
-  const query = "INSERT INTO records (name, amount, date, notes, attachment) values (?, ?, ?, ?, ?)";
-  const { name, amount, date, notes } = req.body;
-  const imageUrl = req.file ? req.file.publicUrl : '';
-  
-  try {
-    const [ rows ] = await pool.execute(query, [name, amount, date, notes, imageUrl]);
+router.post(
+  '/create',
+  multi.single('receipt'),
+  async (req, res, next) => {
+    const { name, amount, date, notes } = req.body;
+    let imageUrl = '';
     
-    res.send({ message: `Record #${rows.insertId} is successfully inserted` });
-  } catch(error) {
-    await handleDelete(imageUrl);
-    next(error);
+    try {
+      if (!Date.parse(date)) {
+        res.status(400);
+        throw new Error('📆 Invalid date and/or time');
+      }
+
+      if (!(name && amount && date)) {
+        res.status(400);
+        throw new Error('🙄 Not all of the required fields were provided');
+      }
+
+      if (req.file) {
+        imageUrl = await handleUpload(req.file, res);
+      }
+
+      const insert = 'INSERT INTO records (name, amount, date, notes, attachment) values (?, ?, ?, ?, ?)';
+      const [ result ] = await pool.execute(insert, [name, amount, date, notes, imageUrl]);
+      
+      if (result.affectedRows < 1) {
+        throw new Error('🛑 Query failed, record didn\'t get created');
+      }
+      const select = 'SELECT * FROM records WHERE id = ?';
+      const [ rows ] = await pool.execute(select, [result.insertId]);
+
+      res.status(201);
+      res.json({ created: rows[0] });
+    } catch(error) {
+      await handleDelete(imageUrl);
+      next(error);
+    }
   }
-});
+);
 
 router.put('/edit/:id(\\d+)', multi.single('receipt'), handleUpload, async (req, res, next) => {
   const query = 'UPDATE records SET name = ?, amount = ?, date = ?, notes = ?, attachment = ? WHERE id = ?';
