@@ -22,16 +22,16 @@ const pool = mysql.createPool({
 }).promise();
 
 router.get('/list', async (req, res, next) => {
-  let query = "SELECT * FROM records";
+  let query = 'SELECT * FROM records';
 
   try {
     const type = req.query.type;
     if (type) {
-      if (type.toUpperCase() === "IN") query += " WHERE amount > 0";
-      else if (type.toUpperCase() === "OUT") query += " WHERE amount < 0";
+      if (type.toUpperCase() === 'IN') query += ' WHERE amount > 0';
+      else if (type.toUpperCase() === 'OUT') query += ' WHERE amount < 0';
       else {
         res.status(400);
-        throw new Error("⛔ - Invalid record type");
+        throw new Error('💸 Invalid record type');
       }
     }
 
@@ -42,7 +42,7 @@ router.get('/list', async (req, res, next) => {
       
       if (!columns.includes(col)) {
         res.status(400);
-        throw new Error("⛔ - Invalid sorting column");
+        throw new Error('🧣 Invalid sorting column');
       }
       
       if (order === undefined) order = "ASC";
@@ -50,7 +50,7 @@ router.get('/list', async (req, res, next) => {
       
       if (order !== "ASC" && order !== "DESC") {
         res.status(400);
-        throw new Error("⛔ - Invalid sorting order");
+        throw new Error('🧻 Invalid sorting order');
       }
 
       query += ` ORDER BY ${col} ${order}`;
@@ -63,11 +63,12 @@ router.get('/list', async (req, res, next) => {
       if (limit > 0) query += ` LIMIT ${limit}`;
       else {
         res.status(400);
-        throw new Error("⛔ - Invalid limit number");
+        throw new Error('🚀 Invalid limit number');
       }
     }
 
     const [ rows ] = await pool.query(`${query};`);
+
     res.json(rows);
   } catch (error) {
     next(error);
@@ -75,22 +76,25 @@ router.get('/list', async (req, res, next) => {
 });
 
 router.get('/summary', async (_req, res, next) => {
-  const query = "SELECT (SELECT COUNT(*) FROM records WHERE MONTH(records.date) = MONTH(now()) AND YEAR(records.date) = YEAR(now())) as number_of_records, (SELECT SUM(amount) FROM records) as balance;";
+  const query = 'SELECT (SELECT COUNT(*) FROM records WHERE MONTH(records.date) = MONTH(now()) AND YEAR(records.date) = YEAR(now())) as number_of_records, (SELECT SUM(amount) FROM records) as balance;';
 
   try {
     const [ rows ] = await pool.query(query);
-    res.json(rows);
+
+    res.json(rows[0]);
   } catch (error) {
     next(error);
   }
 });
 
 router.get('/search/:q', async (req, res, next) => {
-  const query = "SELECT * FROM records WHERE name LIKE ? OR notes LIKE ?";
+  const query = 'SELECT * FROM records WHERE name LIKE ? OR notes LIKE ?';
+
   const q = `%${req.params.q}%`;
 
   try {
     const [ rows ] = await pool.execute(query, [q, q]);
+
     res.json(rows);
   } catch(error) {
     next(error);
@@ -98,7 +102,8 @@ router.get('/search/:q', async (req, res, next) => {
 });
 
 router.get('/:id(\\d+)', async (req, res, next) => {
-  const query = "SELECT * FROM records WHERE id = ?";
+  const query = 'SELECT * FROM records WHERE id = ?';
+
   const id = req.params.id;
 
   try {
@@ -110,8 +115,8 @@ router.get('/:id(\\d+)', async (req, res, next) => {
 });
 
 router.delete('/:id(\\d+)', async (req, res, next) => {
-  const query = "SELECT attachment FROM records WHERE id = ?";
-  const deleteQuery = "DELETE FROM records WHERE id = ?";
+  const query = 'SELECT attachment FROM records WHERE id = ?';
+  const deleteQuery = 'DELETE FROM records WHERE id = ?';
   const id = req.params.id;
 
   try {
@@ -122,7 +127,7 @@ router.delete('/:id(\\d+)', async (req, res, next) => {
 
     const [ deletedRows ] = await pool.execute(deleteQuery, [id]);
 
-    if (deletedRows.affectedRows == 0) throw new Error("🙈 - Record is not found");
+    if (deletedRows.affectedRows == 0) throw new Error('🙈 - Record is not found');
 
     res.send({ message: `Record #${id} is successfully deleted` });
   } catch(error) {
@@ -146,7 +151,7 @@ router.post('/add', multi.single('receipt'), handleUpload, async (req, res, next
 });
 
 router.put('/edit/:id(\\d+)', multi.single('receipt'), handleUpload, async (req, res, next) => {
-  const query = "UPDATE records SET name = ?, amount = ?, date = ?, notes = ?, attachment = ? WHERE id = ?";
+  const query = 'UPDATE records SET name = ?, amount = ?, date = ?, notes = ?, attachment = ? WHERE id = ?';
   const id = req.params.id;
   const { name, amount, date, notes } = req.body;
   const imageUrl = req.file ? req.file.publicUrl : '';
@@ -154,7 +159,7 @@ router.put('/edit/:id(\\d+)', multi.single('receipt'), handleUpload, async (req,
   try {
     const [ rows ] = await pool.execute(query, [name, amount, date, notes, imageUrl, id]);
     
-    if (rows.affectedRows == 0) throw new Error("🙈 - Record is not found");
+    if (rows.affectedRows == 0) throw new Error('🙈 - Record is not found');
     
     res.send({ message: `Record #${id} is successfully updated` });
   } catch (error) {
