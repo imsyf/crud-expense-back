@@ -108,7 +108,15 @@ router.get('/:id(\\d+)', async (req, res, next) => {
 
   try {
     const [ rows ] = await pool.execute(query, [id]);
-    res.json(rows);
+
+    if (rows.length < 1) {
+      res.status(404);
+      const err = new Error(`🙈 Record with ID#${id} is not found`);
+      err.code = 'ID404';
+      throw err;
+    }
+
+    res.json(rows[0]);
   } catch(error) {
     next(error);
   }
