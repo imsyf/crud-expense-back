@@ -18,7 +18,11 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  dateStrings: [
+    'DATE',
+    'DATETIME'
+  ]
 }).promise();
 
 router.get('/list', async (req, res, next) => {
