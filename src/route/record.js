@@ -41,23 +41,19 @@ router.get('/list', async (req, res, next) => {
 
     const orderBy = req.query.order_by;
     if (orderBy) {
-      const columns = ["id", "name", "amount", "date"];
-      let [col, order] = orderBy.split(":");
+      let [col, order = 'ASC'] = orderBy.split(':');
       
-      if (!columns.includes(col)) {
+      if (!col.match(/^(id|name|amount|date)$/i)) {
         res.status(400);
         throw new Error('🧣 Invalid sorting column');
       }
       
-      if (order === undefined) order = "ASC";
-      else order = order.toUpperCase();
-      
-      if (order !== "ASC" && order !== "DESC") {
+      if (!order.match(/^(ASC|DESC)$/i)) {
         res.status(400);
         throw new Error('🧻 Invalid sorting order');
       }
 
-      query += ` ORDER BY ${col} ${order}`;
+      query += ` ORDER BY ${col} ${order.toUpperCase()}`;
     }
 
     let limit = req.query.limit;
