@@ -123,21 +123,30 @@ router.get('/:id(\\d+)', async (req, res, next) => {
 });
 
 router.delete('/:id(\\d+)', async (req, res, next) => {
-  const query = 'SELECT attachment FROM records WHERE id = ?';
-  const deleteQuery = 'DELETE FROM records WHERE id = ?';
+  const select = 'SELECT * FROM records WHERE id = ?';
+  const del = 'DELETE FROM records WHERE id = ?';
+
   const id = req.params.id;
 
   try {
-    const [ rows ] = await pool.execute(query, [id]);
+    const [ rows ] = await pool.execute(select, [id]);
 
-    const publicUrl = rows[0].attachment;
-    await handleDelete(publicUrl);
+    if (rows.length < 1) {
+      res.status(404);
+      const err = new Error(`🙈 Record with ID#${id} is not found`);
+      err.code = 'ID404';
+      throw err;
+    }
+    
+    await handleDelete(rows[0].attachment);
 
-    const [ deletedRows ] = await pool.execute(deleteQuery, [id]);
-
-    if (deletedRows.affectedRows == 0) throw new Error('🙈 - Record is not found');
-
-    res.send({ message: `Record #${id} is successfully deleted` });
+    const [ result ] = await pool.execute(del, [id]);
+    
+    if (result.affectedRows < 1) {
+      throw new Error('🛑 Query failed, record didn\'t get deleted');
+    }
+    
+    res.json({ deleted: rows[0] });
   } catch(error) {
     next(error);
   }
