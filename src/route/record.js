@@ -192,22 +192,125 @@ router.post(
   }
 );
 
-router.put('/edit/:id(\\d+)', multi.single('receipt'), handleUpload, async (req, res, next) => {
-  const query = 'UPDATE records SET name = ?, amount = ?, date = ?, notes = ?, attachment = ? WHERE id = ?';
-  const id = req.params.id;
-  const { name, amount, date, notes } = req.body;
-  const imageUrl = req.file ? req.file.publicUrl : '';
+router.put(
+  '/update/:id(\\d+)',
+  multi.single('receipt'),
+  async (req, res, next) => {
+    const select = 'SELECT * FROM records WHERE id = ?';
 
-  try {
-    const [ rows ] = await pool.execute(query, [name, amount, date, notes, imageUrl, id]);
-    
-    if (rows.affectedRows == 0) throw new Error('🙈 - Record is not found');
-    
-    res.send({ message: `Record #${id} is successfully updated` });
-  } catch (error) {
-    await handleDelete(imageUrl);
-    next(error);
+    const id = req.params.id;
+    const { name, amount, date, notes } = req.body;
+    let newImageUrl = '';
+
+    try {
+      const [ rows ] = await pool.execute(select, [id]);
+
+      if (rows.length < 1) {
+        res.status(404);
+        const err = new Error(`🙈 Record with ID#${id} is not found`);
+        err.code = 'ID404';
+        throw err;
+      }
+
+      if (!Date.parse(date)) {
+        res.status(400);
+        throw new Error('📆 Invalid date and/or time');
+      }
+
+      if (!(name && amount && date)) {
+        res.status(400);
+        throw new Error('🙄 Not all of the required fields were provided');
+      }
+
+      const columns = [];
+      const values = [];
+      const diff = {};
+
+      if (rows[0].name !== name) {
+        columns.push('name = ?');
+        values.push(name);
+        diff.name = {
+          old: rows[0].name,
+          new: name
+        };
+      }
+
+      if (rows[0].amount !== parseInt(amount)) {
+        columns.push('amount = ?');
+        values.push(amount);
+        diff.amount = {
+          old: rows[0].amount,
+          new: parseInt(amount)
+        };
+      }
+
+      const oldTimeStamp = Date.parse(rows[0].date);
+      const newTimeStamp = Date.parse(date);
+      if (oldTimeStamp !== newTimeStamp) {
+        columns.push('date = ?');
+        values.push(date);
+        diff.date = {
+          old: new Date(oldTimeStamp),
+          new: new Date(newTimeStamp)
+        };
+      }
+
+      if (rows[0].notes !== notes) {
+        columns.push('notes = ?');
+        values.push(notes);
+        diff.notes = {
+          old: rows[0].notes,
+          new: notes
+        };
+      }
+
+      if (req.file) {
+        newImageUrl = await handleUpload(req.file, res);
+        
+        columns.push('attachment = ?');
+        values.push(newImageUrl);
+        diff.attachment = {
+          old: rows[0].attachment,
+          new: newImageUrl
+        };
+      }
+
+      if (columns.length < 1) {
+        res.status(400);
+        throw new Error('👋 No new values were provided');
+      }
+
+      const query = `UPDATE records SET ${columns.join(', ')} WHERE id = ?`;
+      values.push(id);
+
+      console.log(query);
+      console.log(values);
+
+      const [ result ] = await pool.execute(query, values);
+
+      if (result.changedRows < 1) {
+        throw new Error('🛑 Query failed, record didn\'t get updated');
+      }
+
+      let response = {
+        updated: diff
+      };
+
+      if (newImageUrl) {
+        try {
+          await handleDelete(rows[0].attachment);
+        } catch (error) {
+          response.warning = true;
+          response.message = error.message;
+        }
+      }
+
+      res.json(response);
+    } catch (error) {
+      await handleDelete(newImageUrl);
+      next(error);
+    }
   }
-});
+);
 
 module.exports = router;
