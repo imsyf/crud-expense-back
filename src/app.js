@@ -38,6 +38,7 @@ if (process.env.NODE_ENV === 'development') {
     console.error(`Failed to create local storage bucket: ${error.message}`);
   }
 }
+
 app.use('/', route);
 
 app.use(middlewares.notFound);

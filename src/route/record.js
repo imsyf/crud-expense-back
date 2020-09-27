@@ -284,9 +284,6 @@ router.put(
       const query = `UPDATE records SET ${columns.join(', ')} WHERE id = ?`;
       values.push(id);
 
-      console.log(query);
-      console.log(values);
-
       const [ result ] = await pool.execute(query, values);
 
       if (result.changedRows < 1) {
