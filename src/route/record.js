@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const multer = require('multer');
+const { default: formatDate } = require('@bitty/format-date');
 
 const { handleUpload, handleDelete } = require('../util/image-uploader');
 
@@ -250,8 +251,8 @@ router.put(
         columns.push('date = ?');
         values.push(date);
         diff.date = {
-          old: new Date(oldTimeStamp),
-          new: new Date(newTimeStamp)
+          old: formatDate(new Date(oldTimeStamp), 'YYYY-MM-DD HH:mm:ss'),
+          new: formatDate(new Date(newTimeStamp), 'YYYY-MM-DD HH:mm:ss')
         };
       }
 
