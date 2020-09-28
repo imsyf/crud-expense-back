@@ -155,7 +155,7 @@ router.delete('/:id(\\d+)', async (req, res, next) => {
 
 router.post(
   '/create',
-  multi.single('receipt'),
+  multi.single('attachment'),
   async (req, res, next) => {
     const { name, amount, date, notes } = req.body;
     let imageUrl = '';
@@ -195,7 +195,7 @@ router.post(
 
 router.put(
   '/update/:id(\\d+)',
-  multi.single('receipt'),
+  multi.single('attachment'),
   async (req, res, next) => {
     const select = 'SELECT * FROM records WHERE id = ?';
 
